@@ -121,6 +121,26 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
         return crc32(info).toString(16);
     }
 
+    function serializePositionJSON(node, offset, rootNode) {
+      var position = {path: [], offset: offset, id: null};
+      var n = node;
+      rootNode = rootNode || dom.getDocument(node).documentElement;
+      while (n && n != rootNode) {
+          if (n.parentNode === rootNode) {
+              if (!n.id) {
+                throw module.createError(
+                    "serializePositionJSON(): first child has no id "
+                );
+              }
+              position.id = n.id;
+              break;
+          }
+          position.path.push(dom.getNodeIndex(n, true));
+          n = n.parentNode;
+      }
+      return position;
+    }
+
     function serializePosition(node, offset, rootNode) {
         var pathParts = [], n = node;
         rootNode = rootNode || dom.getDocument(node).documentElement;
@@ -129,6 +149,26 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
             n = n.parentNode;
         }
         return pathParts.join("/") + ":" + offset;
+    }
+
+    function deserializePositionJSON(serialized, rootNode, doc) {
+        if (!rootNode) {
+            rootNode = (doc || document).documentElement;
+        }
+        var node = rootNode;
+        var nodeIndices = parts[0] ? parts[0].split("/") : [], i = nodeIndices.length, nodeIndex;
+
+        while (i--) {
+            nodeIndex = parseInt(nodeIndices[i], 10);
+            if (nodeIndex < node.childNodes.length) {
+                node = node.childNodes[nodeIndex];
+            } else {
+                throw module.createError("deserializePosition() failed: node " + dom.inspectNode(node) +
+                        " has no child with index " + nodeIndex + ", " + i);
+            }
+        }
+
+        return new dom.DomPosition(node, parseInt(parts[1], 10));
     }
 
     function deserializePosition(serialized, rootNode, doc) {
@@ -152,6 +192,17 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
         return new dom.DomPosition(node, parseInt(parts[1], 10));
     }
 
+    function serializeRangeJSON(range, rootNode) {
+        rootNode = rootNode || api.DomRange.getRangeDocument(range).documentElement;
+        if (!dom.isOrIsAncestorOf(rootNode, range.commonAncestorContainer)) {
+            throw module.createError("serializeRangeJSON(): range " + range.inspect() +
+                " is not wholly contained within specified root node " + dom.inspectNode(rootNode));
+        }
+        var serialized = [serializePositionJSON(range.startContainer, range.startOffset, rootNode),
+            serializePositionJSON(range.endContainer, range.endOffset, rootNode)];
+        return serialized;
+    }
+
     function serializeRange(range, omitChecksum, rootNode) {
         rootNode = rootNode || api.DomRange.getRangeDocument(range).documentElement;
         if (!dom.isOrIsAncestorOf(rootNode, range.commonAncestorContainer)) {
@@ -167,6 +218,19 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
     }
 
     var deserializeRegex = /^([^,]+),([^,\{]+)(\{([^}]+)\})?$/;
+
+    function deserializeRangeJSON(serialized, rootNode, doc) {
+        if (rootNode) {
+            doc = doc || dom.getDocument(rootNode);
+        } else {
+            doc = doc || document;
+            rootNode = doc.documentElement;
+        }
+        var start = deserializePositionJSON(serialized[0], rootNode, doc), end = deserializePositionJSON(serialized[1], rootNode, doc);
+        var range = api.createRange(doc);
+        range.setStartAndEnd(start.node, start.offset, end.node, end.offset);
+        return range;
+    }
 
     function deserializeRange(serialized, rootNode, doc) {
         if (rootNode) {
@@ -199,6 +263,15 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
         return !checksum || checksum === getElementChecksum(rootNode);
     }
 
+    function serializeSelectionJSON(selection, rootNode) {
+        selection = api.getSelection(selection);
+        var ranges = selection.getAllRanges(), serializedRanges = [];
+        for (var i = 0, len = ranges.length; i < len; ++i) {
+            serializedRanges[i] = serializeRangeJSON(ranges[i], rootNode);
+        }
+        return serializedRanges;
+    }
+
     function serializeSelection(selection, omitChecksum, rootNode) {
         selection = api.getSelection(selection);
         var ranges = selection.getAllRanges(), serializedRanges = [];
@@ -206,6 +279,25 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
             serializedRanges[i] = serializeRange(ranges[i], omitChecksum, rootNode);
         }
         return serializedRanges.join("|");
+    }
+
+    function deserializeSelectionJSON(serialized, rootNode, win) {
+        if (rootNode) {
+            win = win || dom.getWindow(rootNode);
+        } else {
+            win = win || window;
+            rootNode = win.document.documentElement;
+        }
+        var serializedRanges = serialized;
+        var sel = api.getSelection(win);
+        var ranges = [];
+
+        for (var i = 0, len = serializedRanges.length; i < len; ++i) {
+            ranges[i] = deserializeRangeJSON(serializedRanges[i], rootNode, win.document);
+        }
+        sel.setRanges(ranges);
+
+        return sel;
     }
 
     function deserializeSelection(serialized, rootNode, win) {
@@ -282,12 +374,16 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
     }
 
     util.extend(api, {
+        serializePositionJSON: serializePositionJSON,
         serializePosition: serializePosition,
         deserializePosition: deserializePosition,
+        serializeRangeJSON: serializeRangeJSON,
         serializeRange: serializeRange,
         deserializeRange: deserializeRange,
         canDeserializeRange: canDeserializeRange,
+        serializeSelectionJSON: serializeSelectionJSON,
         serializeSelection: serializeSelection,
+        deserializeSelectionJSON: deserializeSelectionJSON,
         deserializeSelection: deserializeSelection,
         canDeserializeSelection: canDeserializeSelection,
         restoreSelectionFromCookie: restoreSelectionFromCookie,
