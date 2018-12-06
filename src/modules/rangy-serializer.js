@@ -122,20 +122,11 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
     }
 
     function serializePositionJSON(node, offset, rootNode) {
-      var position = {path: [], offset: offset, id: null};
+      var position = {path: [], offset: offset};
       var n = node;
       rootNode = rootNode || dom.getDocument(node).documentElement;
       while (n && n != rootNode) {
-          if (n.parentNode === rootNode) {
-              if (!n.id) {
-                throw module.createError(
-                    "serializePositionJSON(): first child has no id "
-                );
-              }
-              position.id = n.id;
-              break;
-          }
-          position.path.push(dom.getNodeIndex(n, true));
+          position.path.push({index: dom.getNodeIndex(n, true), id: n.id});
           n = n.parentNode;
       }
       return position;
@@ -155,20 +146,25 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
         if (!rootNode) {
             rootNode = (doc || document).documentElement;
         }
-        var node = rootNode;
-        var nodeIndices = parts[0] ? parts[0].split("/") : [], i = nodeIndices.length, nodeIndex;
-
-        while (i--) {
-            nodeIndex = parseInt(nodeIndices[i], 10);
-            if (nodeIndex < node.childNodes.length) {
-                node = node.childNodes[nodeIndex];
-            } else {
-                throw module.createError("deserializePosition() failed: node " + dom.inspectNode(node) +
-                        " has no child with index " + nodeIndex + ", " + i);
+        // walk backwards until a node with a valid id is found
+        var path;
+        for (var i = serialized.path.length-1; i <= 0; i--) {
+          path = serialized.path[i];
+          if (path.id && path.id !== "") {
+            node = document.getElementById(path.id);
+            // if this is the last return this and the offset
+            if (i === serialized.path.length-1) {
+              return new dom.DomPosition(node, serialized.offset);
+            } else if(!serialized.path[i+1].id || serialized.path[i+1].id === "") {
+              // if there is a next path and has no id it is a text node
+              return new dom.DomPosition(node.childNodes[serialized.path[i+1].index], offset);
+            } else if (node) {
+              // else there was a problem and return this with zero offset
+              return new dom.DomPosition(node, 0);
             }
+          }
         }
-
-        return new dom.DomPosition(node, parseInt(parts[1], 10));
+        throw module.createError("deserializePositionJSON() failed: can't find any node");
     }
 
     function deserializePosition(serialized, rootNode, doc) {
