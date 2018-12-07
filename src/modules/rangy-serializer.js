@@ -148,21 +148,23 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
         }
         // walk backwards until a node with a valid id is found
         var path;
-        for (var i = serialized.path.length-1; i <= 0; i--) {
+        for (var i = 0; i < serialized.path.length; i++) {
           path = serialized.path[i];
           if (path.id && path.id !== "") {
             node = document.getElementById(path.id);
-            // if this is the last return this and the offset
-            if (i === serialized.path.length-1) {
-              return new dom.DomPosition(node, serialized.offset);
-            } else if(!serialized.path[i+1].id || serialized.path[i+1].id === "") {
-              // if there is a next path and has no id it is a text node
-              return new dom.DomPosition(node.childNodes[serialized.path[i+1].index], offset);
-            } else if (node) {
-              // else there was a problem and return this with zero offset
-              return new dom.DomPosition(node, 0);
-            }
-          }
+            if (node) {
+              // if this is the last return this and the offset
+              if (i === 0) {
+                return new dom.DomPosition(node, serialized.offset);
+              } else if(!serialized.path[i-1].id || serialized.path[i-1].id === "") {
+                // if there is a next path and has no id it is a text node
+                return new dom.DomPosition(node.childNodes[serialized.path[i-1].index], serialized.offset);
+              } else if (node) {
+                // else there was a problem and return this with zero offset
+                return new dom.DomPosition(node, serialized.path[i-1].index);
+              }
+            } // else let it go to the next
+          } // else let it go to the next
         }
         throw module.createError("deserializePositionJSON() failed: can't find any node");
     }
@@ -194,8 +196,8 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
             throw module.createError("serializeRangeJSON(): range " + range.inspect() +
                 " is not wholly contained within specified root node " + dom.inspectNode(rootNode));
         }
-        var serialized = [serializePositionJSON(range.startContainer, range.startOffset, rootNode),
-            serializePositionJSON(range.endContainer, range.endOffset, rootNode)];
+        var serialized = {start: serializePositionJSON(range.startContainer, range.startOffset, rootNode),
+            end: serializePositionJSON(range.endContainer, range.endOffset, rootNode)};
         return serialized;
     }
 
@@ -222,7 +224,7 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
             doc = doc || document;
             rootNode = doc.documentElement;
         }
-        var start = deserializePositionJSON(serialized[0], rootNode, doc), end = deserializePositionJSON(serialized[1], rootNode, doc);
+        var start = deserializePositionJSON(serialized.start, rootNode, doc), end = deserializePositionJSON(serialized.end, rootNode, doc);
         var range = api.createRange(doc);
         range.setStartAndEnd(start.node, start.offset, end.node, end.offset);
         return range;
