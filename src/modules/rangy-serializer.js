@@ -166,7 +166,7 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
             } // else let it go to the next
           } // else let it go to the next
         }
-        throw module.createError("deserializePositionJSON() failed: can't find any node");
+        return new dom.DomPosition(rootNode, 0);
     }
 
     function deserializePosition(serialized, rootNode, doc) {
