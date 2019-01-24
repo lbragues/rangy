@@ -162,8 +162,8 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
         var attribute;
         for (var i = 0; i < attributeGroup.length; i++) {
           attribute = attributeGroup[i];
-          el1HasAttributeSet = el1.hasAttribute(attribute) && el1.getAttribute(attribute) === "true";
-          el2HasAttributeSet = el2.hasAttribute(attribute) && el2.getAttribute(attribute) === "true";
+          el1HasAttributeSet = el1.hasAttribute(attribute) && el1.getAttribute(attribute);
+          el2HasAttributeSet = el2.hasAttribute(attribute) && el2.getAttribute(attribute);
           if (el1HasAttributeSet !== el2HasAttributeSet) {
             return false;
           }
