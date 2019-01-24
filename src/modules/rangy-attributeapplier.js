@@ -428,6 +428,7 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
         var normalize, i, len, propName, applier = this, hasAttributeName = false;
 
         applier.attributeName = attributeName;
+        applier.attributeValue = true;
 
         // Initialize from options object
         if (typeof options == "object" && options !== null) {
@@ -492,6 +493,10 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
         removeEmptyElements: true,
         onElementCreate: null,
         attributeGroup: [],
+
+        setAttributeValue: function(attributeValue) {
+            this.attributeValue = attributeValue;
+        }
 
         appliesToElement: function(el) {
             return contains(this.tagNames, el.tagName.toLowerCase());
@@ -591,7 +596,7 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
                 doc.createElementNS(parentNode.namespaceURI, this.elementTagName) :
                 doc.createElement(this.elementTagName);
 
-            el.setAttribute(this.attributeName, true);
+            el.setAttribute(this.attributeName, this.attributeValue);
             if (this.onElementCreate) {
                 this.onElementCreate(el, this);
             }
@@ -622,7 +627,7 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
                     this.useExistingElements &&
                     this.appliesToElement(parent)) {
 
-                    parent.setAttribute(this.attributeName, true);
+                    parent.setAttribute(this.attributeName, this.attributeValue);
                 } else {
                     var textNodeParent = textNode.parentNode;
                     var el = this.createContainer(textNodeParent);
@@ -745,7 +750,7 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
             var emptyElements = applier.getEmptyElements(range);
 
             forEach(emptyElements, function(el) {
-                el.setAttribute(applier.attributeName, true);
+                el.setAttribute(applier.attributeName, applier.attributeValue);
             });
         },
 
