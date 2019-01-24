@@ -162,9 +162,15 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
         var attribute;
         for (var i = 0; i < attributeGroup.length; i++) {
           attribute = attributeGroup[i];
-          el1HasAttributeSet = el1.hasAttribute(attribute) && el1.getAttribute(attribute);
-          el2HasAttributeSet = el2.hasAttribute(attribute) && el2.getAttribute(attribute);
-          if (el1HasAttributeSet !== el2HasAttributeSet) {
+          el1HasAttributeSet = el1.hasAttribute(attribute);
+          el2HasAttributeSet = el2.hasAttribute(attribute);
+          if (el1HasAttributeSet && el2HasAttributeSet) {
+             if (el1.getAttribute(attribute) !== el2.getAttribute(attribute)) {
+                return false;
+             }
+          } else if (el1HasAttributeSet && el1.getAttribute(attribute) !== "false") {
+            return false;
+          } else if (el2HasAttributeSet && el2.getAttribute(attribute) !== "false") {
             return false;
           }
         }
@@ -493,10 +499,6 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
         removeEmptyElements: true,
         onElementCreate: null,
         attributeGroup: [],
-
-        setAttributeValue: function(attributeValue) {
-            this.attributeValue = attributeValue;
-        }
 
         appliesToElement: function(el) {
             return contains(this.tagNames, el.tagName.toLowerCase());
