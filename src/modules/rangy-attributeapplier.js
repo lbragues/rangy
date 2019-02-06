@@ -430,11 +430,11 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
     // TODO: Populate this with every attribute name that corresponds to a property with a different name. Really??
     var attrNamesForProperties = {};
 
-    function AttributeApplier(attributeName, options) {
+    function AttributeApplier(attributeName, options, attributeValue) {
         var normalize, i, len, propName, applier = this, hasAttributeName = false;
 
         applier.attributeName = attributeName;
-        applier.attributeValue = true;
+        applier.attributeValue = attributeValue === undefined ? "true" : attributeValue;
 
         // Initialize from options object
         if (typeof options == "object" && options !== null) {
@@ -513,7 +513,7 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
 
         getSelfOrAncestorWithAttribute: function(node) {
             while (node) {
-                if (node.nodeType === 1 && (this.applyToAnyTagName || this.appliesToElement(node)) && node.hasAttribute(this.attributeName) && node.getAttribute(this.attributeName) === "true") {
+                if (node.nodeType === 1 && (this.applyToAnyTagName || this.appliesToElement(node)) && node.hasAttribute(this.attributeName) && node.getAttribute(this.attributeName) !== "false") {
                     return node;
                 }
                 node = node.parentNode;
@@ -610,7 +610,7 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
             var attribute;
             for (var i = 0; i < attributeGroup.length; i++) {
                 attribute = attributeGroup[i];
-                if (attributeName !== attribute && el.hasAttribute(attribute) && el.getAttribute(attribute) === "true") {
+                if (attributeName !== attribute && el.hasAttribute(attribute) && el.getAttribute(attribute) !== "false") {
                   return false;
                 }
             }
@@ -911,8 +911,8 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
         detach: function() {}
     };
 
-    function createAttributeApplier(attributeName, options) {
-        return new AttributeApplier(attributeName, options);
+    function createAttributeApplier(attributeName, options, attributeValue) {
+        return new AttributeApplier(attributeName, options, attributeValue);
     }
 
     AttributeApplier.util = {
