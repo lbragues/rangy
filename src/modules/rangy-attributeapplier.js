@@ -513,7 +513,7 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
 
         getSelfOrAncestorWithAttribute: function(node) {
             while (node) {
-                if (node.nodeType === 1 && (this.applyToAnyTagName || this.appliesToElement(node)) && node.hasAttribute(this.attributeName) && node.getAttribute(this.attributeName) !== "false") {
+                if (node.nodeType === 1 && (this.applyToAnyTagName || this.appliesToElement(node)) && node.hasAttribute(this.attributeName) && node.getAttribute(this.attributeName) === this.attributeValue) {
                     return node;
                 }
                 node = node.parentNode;
