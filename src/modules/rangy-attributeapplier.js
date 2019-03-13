@@ -430,11 +430,12 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
     // TODO: Populate this with every attribute name that corresponds to a property with a different name. Really??
     var attrNamesForProperties = {};
 
-    function AttributeApplier(attributeName, options, attributeValue) {
+    function AttributeApplier(attributeName, options, attributeValue, normalizer) {
         var normalize, i, len, propName, applier = this, hasAttributeName = false;
 
         applier.attributeName = attributeName;
         applier.attributeValue = attributeValue === undefined ? "true" : attributeValue;
+        applier.normalizer = normalizer;
 
         // Initialize from options object
         if (typeof options == "object" && options !== null) {
@@ -633,6 +634,9 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
                 } else {
                     var textNodeParent = textNode.parentNode;
                     var el = this.createContainer(textNodeParent);
+                    if (this.normalizer) {
+                      this.normalizer(el, textNodeParent.id);
+                    }
                     textNodeParent.insertBefore(el, textNode);
                     el.appendChild(textNode);
                 }
@@ -911,8 +915,8 @@ rangy.createModule("AttributeApplier", ["WrappedSelection"], function(api, modul
         detach: function() {}
     };
 
-    function createAttributeApplier(attributeName, options, attributeValue) {
-        return new AttributeApplier(attributeName, options, attributeValue);
+    function createAttributeApplier(attributeName, options, attributeValue, normalizer) {
+        return new AttributeApplier(attributeName, options, attributeValue, normalizer);
     }
 
     AttributeApplier.util = {
