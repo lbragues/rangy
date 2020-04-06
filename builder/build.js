@@ -22,6 +22,7 @@ var zipDir;
 var uncompressedBuildDir;
 var coreFilename = "rangy-core.js";
 var modules = [
+    "rangy-attributeapplier.js",
     "rangy-classapplier.js",
     "rangy-serializer.js",
     "rangy-selectionsaverestore.js",
@@ -402,8 +403,8 @@ var actions = [
     substituteBuildVars,
     lint,
     minify,
-    zip,
-    tarGz,
+    // zip,
+    // tarGz,
     copyToLib,
     copyToRelease
 ];

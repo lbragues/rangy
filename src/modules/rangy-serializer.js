@@ -146,6 +146,11 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
         if (!rootNode) {
             rootNode = (doc || document).documentElement;
         }
+
+        if(!serialized.path || serialized.path.length === 0){
+            return new dom.DomPosition(rootNode, serialized.offset || 0);
+        }
+
         // walk backwards until a node with a valid id is found
         var path;
         for (var i = 0; i < serialized.path.length; i++) {
@@ -166,6 +171,7 @@ rangy.createModule("Serializer", ["WrappedSelection"], function(api, module) {
             } // else let it go to the next
           } // else let it go to the next
         }
+        
         return new dom.DomPosition(rootNode, 0);
     }
 
